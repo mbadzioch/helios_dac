@@ -1,5 +1,6 @@
 /*
 Driver API for Helios Laser DACs
+16 BIT VERSION
 By Gitle Mikkelsen
 
 See HeliosDacAPI.h for documentation
@@ -30,12 +31,12 @@ int OpenDevices()
 	return result;
 }
 
-int WriteFrame(unsigned int dacNum, int pps, std::uint8_t flags, HeliosPoint* points, int numOfPoints)
+int WriteFrame(unsigned int dacNum, int pps, std::uint8_t flags, HeliosPoint* points, int numOfPoints, unsigned int vRefA, unsigned int vRefB)
 {
 	if (!inited)
 		return HELIOS_ERROR;
 
-	return dacController->WriteFrame(dacNum, pps, flags, points, numOfPoints);
+	return dacController->WriteFrame(dacNum, pps, flags, points, numOfPoints, vRefA, vRefB);
 }
 
 int Stop(unsigned int dacNum)
@@ -148,7 +149,7 @@ OLSC_API int __stdcall OLSC_GetDeviceCapabilities(int device_number, struct LASE
 		return OLSC_ERROR_NONE;
 
 	device_capabilities.color_resolution = 8;
-	device_capabilities.xy_resolution = 12;
+	device_capabilities.xy_resolution = 16;
 	device_capabilities.has_dmx_in = false;
 	device_capabilities.has_dmx_out = false;
 	device_capabilities.has_ttl_in = false;
@@ -206,8 +207,8 @@ OLSC_API int __stdcall OLSC_WriteFrame(int device_number, struct LASER_SHOW_DEVI
 	HeliosPoint frameBuffer[HELIOS_MAX_POINTS * 7 + 5];
 	for (int i = 0; i < frame.point_count; i++)
 	{
-		frameBuffer[i].x = (frame.points[i].x >> 4);
-		frameBuffer[i].y = (frame.points[i].y >> 4);
+		frameBuffer[i].x = (frame.points[i].x);
+		frameBuffer[i].y = (frame.points[i].y);
 		frameBuffer[i].r = (std::uint8_t)frame.points[i].r;
 		frameBuffer[i].g = (std::uint8_t)frame.points[i].g;
 		frameBuffer[i].b = (std::uint8_t)frame.points[i].b;
@@ -215,7 +216,7 @@ OLSC_API int __stdcall OLSC_WriteFrame(int device_number, struct LASER_SHOW_DEVI
 	}
 
 	//send frame to dac
-	return dacController->WriteFrame(device_number, frame.display_speed, HELIOS_FLAGS_DEFAULT, frameBuffer, frame.point_count);
+	return dacController->WriteFrame(device_number, frame.display_speed, HELIOS_FLAGS_DEFAULT, frameBuffer, frame.point_count, 0xFFFF, 0xFFFF);
 }
 
 OLSC_API int __stdcall OLSC_GetStatus(int device_number, DWORD& status)
